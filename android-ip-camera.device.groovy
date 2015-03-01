@@ -3,7 +3,7 @@
  * Author: rob.a.landry@gmail.com
  * 
  * Author: http://github.com/roblandry
- * Date: 2/29/15
+ * Date: 2/28/15
  */
 
 preferences
@@ -20,7 +20,9 @@ metadata {
 		capability "Switch"
 		capability "Actuator"
 		capability "Battery"
+		capability "Illuminance Measurement"
 		capability "Temperature Measurement"
+		capability "Relative Humidity Measurement"
 
 		command "ledOn"
 		command "ledOff"
@@ -48,28 +50,28 @@ metadata {
 		}
 
 		standardTile("record", "device.switch", width: 1, height: 1) {
-			state("off", label: 'Record Off', action:"switch.on", icon:"st.switches.light.off", backgroundColor: "#ffffff")
-			state("on", label: 'Record On', action:"switch.off", icon:"st.switches.light.on", backgroundColor: "#79b821")
+			state("recordOff", label: 'Record Off', action:"switch.on", icon:"st.switches.light.off", backgroundColor: "#ffffff")
+			state("recordOn", label: 'Record On', action:"switch.off", icon:"st.switches.light.on", backgroundColor: "#79b821")
 		}
 
 		standardTile("led", "device.led", width: 1, height: 1) {
-			state("off", label: 'Led Off', action:"ledOn", icon:"st.switches.light.off", backgroundColor: "#ffffff")
-			state("on", label: 'Led On', action:"ledOff", icon:"st.switches.light.on", backgroundColor: "#79b821")
+			state("ledOff", label: 'Led Off', action:"ledOn", icon:"st.switches.light.off", backgroundColor: "#ffffff")
+			state("ledOn", label: 'Led On', action:"ledOff", icon:"st.switches.light.on", backgroundColor: "#79b821")
 		}
 
 		standardTile("focus", "device.focus", width: 1, height: 1) {
-			state("off", label: 'Focus Off', action:"focusOn", icon:"st.switches.light.off", backgroundColor: "#ffffff")
-			state("on", label: 'Focus On', action:"focusOff", icon:"st.switches.light.on", backgroundColor: "#79b821")
+			state("focusOff", label: 'Focus Off', action:"focusOn", icon:"st.switches.light.off", backgroundColor: "#ffffff")
+			state("focusOn", label: 'Focus On', action:"focusOff", icon:"st.switches.light.on", backgroundColor: "#79b821")
 		}
 
 		standardTile("overlay", "device.overlay", width: 1, height: 1) {
-			state("off", label: 'Overlay Off', action:"overlayOn", icon:"st.switches.light.off", backgroundColor: "#ffffff")
-			state("on", label: 'Overlay On', action:"overlayOff", icon:"st.switches.light.on", backgroundColor: "#79b821")
+			state("overlayOff", label: 'Overlay Off', action:"overlayOn", icon:"st.switches.light.off", backgroundColor: "#ffffff")
+			state("overlayOn", label: 'Overlay On', action:"overlayOff", icon:"st.switches.light.on", backgroundColor: "#79b821")
 		}
 
 		standardTile("nightVision", "device.nightVision", width: 1, height: 1) {
-			state("off", label: 'Night Vision Off', action:"nightVisionOn", icon:"st.switches.light.off", backgroundColor: "#ffffff")
-			state("on", label: 'Night Vision On', action:"nightVisionOff", icon:"st.switches.light.on", backgroundColor: "#79b821")
+			state("nightVisionOff", label: 'Night Vision Off', action:"nightVisionOn", icon:"st.switches.light.off", backgroundColor: "#ffffff")
+			state("nightVisionOn", label: 'Night Vision On', action:"nightVisionOff", icon:"st.switches.light.on", backgroundColor: "#79b821")
 		}
 
 		valueTile("battery", "device.battery", inactiveLabel: false, decoration: "flat") {
@@ -87,7 +89,7 @@ metadata {
 		}
 
 		valueTile("temperature", "device.temperature") {
-			state("temperature", label:'${currentValue}°', unit:"F",
+			state("temperature", label:'${currentValue}°', unit:"${unit}",
 				backgroundColors:[
 					[value: 31, color: "#153591"],
 					[value: 44, color: "#1e9cbb"],
@@ -100,12 +102,20 @@ metadata {
 			)
 		}
 
+		valueTile("light", "device.illuminance", decoration: "flat") {
+			state("light", label:'${currentValue} lux', unit:"${unit}")
+		}
+
+		valueTile("humidity", "device.humidity", decoration: "flat") {
+			state("humidity", label:'${currentValue}% humidity', unit:"${unit}")
+		}
+
 		standardTile("refresh", "device.switch", inactiveLabel: false, decoration: "flat") {
 			state("default", label:"", action:"refresh", icon:"st.secondary.refresh")
 		}
 
 		main "camera"
-		details(["cameraDetails","take","record","led","focus","overlay","nightVision","battery", "temperature","refresh"])
+		details(["cameraDetails","take","record","led","focus","overlay","nightVision","battery","temperature","light","humidity","refresh"])
 	}
 }
 
@@ -165,7 +175,7 @@ def on(theSwitch="record") {
 
 	httpGet("http://${username}:${password}@${url}:${port}/${sUrl}"){
 		response -> log.info("${device.label} ${theSwitch} On")
-		sendEvent(name: "${theSwitch}", value: "on")
+		sendEvent(name: "${theSwitch}", value: "${theSwitch}On")
 	}
 
 }
@@ -195,7 +205,7 @@ def off(theSwitch="record") {
 
 	httpGet("http://${username}:${password}@${url}:${port}/${sUrl}"){
 		response -> log.info("${device.label} ${theSwitch} Off")
-		sendEvent(name: "${theSwitch}", value: "off")
+		sendEvent(name: "${theSwitch}", value: "${theSwitch}Off")
 	}
 
 }
@@ -216,11 +226,15 @@ def nightVisionOn() { on("nightVision") }
 
 def nightVisionOff() { off("nightVision") }
 
+def installed() { runPeriodically(20*60, poll) }
+
+def configure() { poll() }
+
 def poll() { refresh() }
 
-def refresh() { getSensor("battery") }
+def refresh() { getSensors() }
 
-def getSensor(theSensor) {
+def getSensors() {
 
 	def params = [
 		uri: "http://${username}:${password}@${url}:${port}",
@@ -230,7 +244,7 @@ def getSensor(theSensor) {
 
 	log.debug "Params = ${params}"
 
-	def thejSensor
+	def theSensor
 	def theUnit
 	def theData
 
@@ -238,19 +252,19 @@ def getSensor(theSensor) {
 		httpGet(params) { 
 			response -> log.debug "Start httpGet"
 			response.data.each {
-				key,value -> thejSensor = key
+				key,value -> theSensor = key
 				theUnit = value.unit
 				if (value.data[0][1].size() == 1) {
 					theData = value.data[0][1].first() 
-					if (thejSensor == "battery_level") {thejSensor = "battery"}
-					if (thejSensor == "ambient_temp") {
-						thejSensor = "temperature"
+					if (theSensor == "battery_level") {theSensor = "battery"}
+					if (theSensor == "ambient_temp") {
+						theSensor = "temperature"
 						theUnit = "F"
 						theData = cToF(theData as Integer)
 					}
-					sendEvent(name:"${thejSensor}", unit:"${theUnit}", value: theData as Integer)
+					sendEvent(name:"${theSensor}", unit:"${theUnit}", value: theData as Integer)
 				} else { theData = value.data[0][1] }
-				log.debug "${thejSensor}: ${theUnit} ${theData}"
+				log.debug "${theSensor}: ${theUnit} ${theData}"
 			}
 		}
 	}
