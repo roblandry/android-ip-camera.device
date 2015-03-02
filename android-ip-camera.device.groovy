@@ -1,9 +1,28 @@
 /** Android IP Camera
  *
- * Author: rob.a.landry@gmail.com
+ *  Author: Rob Landry
  * 
- * Author: http://github.com/roblandry
- * Date: 2/28/15
+ *  URL: http://github.com/roblandry/android-ip-camera.device
+ * 
+ *  Date: 2/28/15
+ *  
+ *  Version: 1.0
+ * 
+ *  Description: This is a custom device type. This works with the Android IP Camera app. It allows you to take photos, 
+ *  record video, turn on/off the led, focus, overlay, and night vision. It displays various sensors including battery 
+ *  level, humidity, temperature, and light (lux). The sensor data is all dependent on what your phone supports.
+ * 
+ *  Copyright: 2015 Rob Landry
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
  */
 
 preferences
@@ -32,7 +51,7 @@ metadata {
 		command "overlayOff"
 		command "nightVisionOn"
 		command "nightVisionOff"
-        command "refresh"
+		command "refresh"
 
 
 	}
