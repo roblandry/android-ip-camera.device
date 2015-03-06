@@ -4,9 +4,9 @@
  * 
  *  URL: http://github.com/roblandry/android-ip-camera.device
  * 
- *  Date: 2/28/15
+ *  Date: 3/6/15
  *  
- *  Version: 1.0
+ *  Version: 1.0.1
  * 
  *  Description: This is a custom device type. This works with the Android IP Camera app. It allows you to take photos, 
  *  record video, turn on/off the led, focus, overlay, and night vision. It displays various sensors including battery 
