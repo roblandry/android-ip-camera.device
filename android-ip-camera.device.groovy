@@ -4,9 +4,9 @@
  * 
  *  URL: http://github.com/roblandry/android-ip-camera.device
  * 
- *  Date: 2/28/15
+ *  Date: 3/6/15
  *  
- *  Version: 1.0
+ *  Version: 1.0.1
  * 
  *  Description: This is a custom device type. This works with the Android IP Camera app. It allows you to take photos, 
  *  record video, turn on/off the led, focus, overlay, and night vision. It displays various sensors including battery 
@@ -96,13 +96,10 @@ metadata {
 		valueTile("battery", "device.battery", inactiveLabel: false, decoration: "flat") {
 			state("battery", label:'${currentValue}% battery', unit:"${unit}",
 				backgroundColors:[
-					[value: 31, color: "#153591"],
-					[value: 44, color: "#1e9cbb"],
-					[value: 59, color: "#90d2a7"],
-					[value: 74, color: "#44b621"],
-					[value: 84, color: "#f1d801"],
-					[value: 95, color: "#d04e00"],
-					[value: 96, color: "#bc2323"]
+					[value: 0..4, color: "#FF0000"],
+					[value: 5..19, color: "#FFA500"],
+					[value: 20..49, color: "#FFFF00"],
+					[value: 50..100, color: "#5DFC0A"]
 				]
 			)
 		}
@@ -126,7 +123,13 @@ metadata {
 		}
 
 		valueTile("humidity", "device.humidity", decoration: "flat") {
-			state("humidity", label:'${currentValue}% humidity', unit:"${unit}")
+			state("humidity", label:'${currentValue}% humidity', unit:"${unit}",
+				backgroundColors:[
+					[value: 0..19, color: "#FF0000"],
+					[value: 20..49, color: "#FFFF00"],
+					[value: 50..100, color: "#5DFC0A"]
+				]
+			)
 		}
 
 		standardTile("refresh", "device.switch", inactiveLabel: false, decoration: "flat") {
@@ -160,8 +163,6 @@ private take() {
 	log.info("${device.label} taking photo")
 
 	httpGet("http://${username}:${password}@${url}:${port}/photo_save_only.jpg"){
-		//httpGet("http://${username}:${password}@${url}:${port}/photo_save_only.jpg")
-		//httpGet("http://${username}:${password}@${url}:${port}/photo_save_only.jpg")
 		httpGet("http://${username}:${password}@${url}:${port}/photo.jpg"){
 			response -> log.info("${device.label} image captured")
 			parseCameraResponse(response)
@@ -281,6 +282,7 @@ def getSensors() {
 						theUnit = "F"
 						theData = cToF(theData as Integer)
 					}
+					log.info "name: ${theSensor}, unit: ${theUnit}, value: ${theData as Integer}"
 					sendEvent(name:"${theSensor}", unit:"${theUnit}", value: theData as Integer)
 				} else { theData = value.data[0][1] }
 				log.debug "${theSensor}: ${theUnit} ${theData}"
@@ -291,5 +293,5 @@ def getSensors() {
 }
 
 def cToF(temp) {
-    return temp * 1.8 + 32
+	return temp * 1.8 + 32
 }
